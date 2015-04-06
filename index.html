@@ -17,7 +17,9 @@
         	Wall,
         	walls,
         	wallInterval = 2000,
-        	canEscapeFire = false;
+        	canEscapeFire = false,
+            element,
+            elements = ['fire','water','plant'];
     	
     	var play = function(game) {};
     	
@@ -111,13 +113,17 @@
     		game.state.start("Play");
     	}
 
-        Wall = function(x, y, speed) {
+        Wall = function(x, y, speed, element) {
 			Phaser.Sprite.call(this, game, x, y, 'wall');
 			game.physics.enable(this, Phaser.Physics.ARCADE);
 			this.body.gravity.x = -300;
+            this.element = elements[game.rnd.integerInRange(0,2)];
+            
         };
         
         Wall.prototype = Object.create(Phaser.Sprite.prototype);
+
+
         
         Wall.prototype.constructor = Wall;
         
@@ -128,9 +134,11 @@
 		};  
 
         function addWalls () {
-        	var wall = new Wall(800, 100);
+ 
+        	var wall = new Wall(800, 100, element);
 			game.add.existing(wall);
 			walls.add(wall);
+            console.log(wall.element);
         }      
 
         game.state.add("Play",play);
