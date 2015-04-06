@@ -34,6 +34,9 @@
 	        	game.load.image('wall-plant', 'img/wall.png');
 	        	game.load.image('wall-fire', 'img/wall_fire.png');
 	        	game.load.image('wall-water', 'img/wall_water.png');
+	        	game.load.image('button_water', 'img/button_water.png');
+	        	game.load.image('button_fire', 'img/button_fire.png');
+	        	game.load.image('button_plant', 'img/button_plant.png');
 	        },
 
 	       	create: function () {
@@ -82,8 +85,23 @@
 			    cursors = game.input.keyboard.createCursorKeys();
 
 			    game.time.events.loop(wallInterval, addWalls);
+
+			    var buttons = {};
+			    buttons.fire = game.add.sprite(100, 450, 'button_fire');
+			    buttons.water = game.add.sprite(300, 450, 'button_water');
+			    buttons.plant = game.add.sprite(500, 450, 'button_plant');
+			    
+			    buttons.fire.inputEnabled = true;
+			    buttons.water.inputEnabled = true;
+			    buttons.plant.inputEnabled = true; 
+
+				//callback function for click events
+				buttons.fire.events.onInputDown.add(escape, this);
+				buttons.water.events.onInputDown.add(escape, this);
+				buttons.plant.events.onInputDown.add(escape, this);
         	},
 
+        	 
         	update: function () {
 	        	
 	    		game.physics.arcade.collide(player, platforms);
@@ -116,13 +134,26 @@
         	}
     	}
 
+    	function escape (el) {
+        	if (el.key === 'button_fire') {
+        		toggleHood('plant');
+        	}
+        	else if (el.key === 'button_water') {
+        		toggleHood('fire');
+        	}
+        	else if (el.key === 'button_plant') {
+        		toggleHood('water');
+        	}
+        }
+
+
     	function toggleHood(element) {
     		escapeElements.fire = false;
     		escapeElements.water = false;
     		escapeElements.plant = false;
 
 			escapeElements[element] = true;
-    		console.log(escapeElements[element] + ' is active');
+    		console.log('escape ' + element + ' is active');
     	}
 
     	function onCollision () {
