@@ -19,7 +19,9 @@
         	wallInterval = 2000,
         	canEscapeFire = false,
             element,
-            elements = ['fire','water','plant'];
+            elements = ['fire','water','plant'],
+            escapeElements = {};	
+
     	
     	var play = function(game) {};
     	
@@ -87,14 +89,19 @@
 	    		game.physics.arcade.collide(player, walls, onCollision);
 
 			    if (cursors.left.isDown)
-			    {}
+			    {
+			    	toggleHood('plant');
+			    	console.log('press key plant');
+			    }
 			    else if (cursors.right.isDown)
 			    {
-			    	canEscapeFire = true;
+			    	toggleHood('fire');
+			    	console.log('press key fire');
 			    }
 			    else if (cursors.up.isDown)
 			    {
-			    	
+			    	toggleHood('water');
+			    	console.log('press key water');
 			    }
 			    else
 			    {
@@ -107,8 +114,16 @@
         	}
     	}
 
+    	function toggleHood(element) {
+    		escapeElements.fire = false;
+    		escapeElements.water = false;
+    		escapeElements.plant = false;
+
+			escapeElements[element] = true;
+    		console.log(escapeElements[element] + ' is active');
+    	}
+
     	function onCollision () {
-    		console.log('collision detected');
     		player.destroy();
     		game.state.start("Play");
     	}
@@ -118,7 +133,7 @@
 			game.physics.enable(this, Phaser.Physics.ARCADE);
 			this.body.gravity.x = -300;
             this.element = elements[game.rnd.integerInRange(0,2)];
-            
+            console.log('wall of element: ' + this.element);
         };
         
         Wall.prototype = Object.create(Phaser.Sprite.prototype);
@@ -128,17 +143,15 @@
         Wall.prototype.constructor = Wall;
         
         Wall.prototype.update = function () {
-        	if (canEscapeFire) {
+        	if (escapeElements[this.element]) {
         		this.body.checkCollision.left = false;
         	}
 		};  
 
         function addWalls () {
- 
         	var wall = new Wall(800, 100, element);
 			game.add.existing(wall);
 			walls.add(wall);
-            console.log(wall.element);
         }      
 
         game.state.add("Play",play);
