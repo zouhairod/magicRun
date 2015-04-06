@@ -11,185 +11,197 @@
 
     window.onload = function() {
     	var game = new Phaser.Game(800, 600, Phaser.AUTO, '');
-        var platforms,
+        
+        var platformsGroup,
+        	wallsGroup,
         	player,
-        	cursor,
         	Wall,
-        	walls,
-        	wallInterval = 2000,
-        	canEscapeFire = false,
-            element,
+        	// config
+        	wallCreationInterval = 2000,
+        	gameSpeed = -150,
             elements = ['fire','water','plant'],
-            escapeElements = {};	
-
+            oppositeElements = { 
+            	'fire': { strongAgainst: 'plant' }, 
+            	'water': { strongAgainst: 'fire' },
+            	'plant': { strongAgainst: 'water' }
+            };
     	
-    	var play = function(game) {};
+    	/*
+    	 * PRELOAD
+    	 * Load assets of the game
+    	 */
+
+    	var preload = function () {
+	    	game.load.image('bk', 'img/sky.png');
+	    	game.load.image('plateform', 'img/platform.png');
+	    	game.load.image('wall-plant', 'img/wall.png');
+	    	game.load.image('wall-fire', 'img/wall_fire.png');
+	    	game.load.image('wall-water', 'img/wall_water.png');
+	    	game.load.image('button_water', 'img/button_water.png');
+	    	game.load.image('button_fire', 'img/button_fire.png');
+	    	game.load.image('button_plant', 'img/button_plant.png');
+	    	game.load.spritesheet('dude', 'img/dude.png', 32, 48);
+	    }
+
+
+	    /*
+	     * INIT
+	     * Create your objects 
+	     */
+
+    	var init = function () {
+        	game.physics.startSystem(Phaser.Physics.ARCADE);
+
+        	initBackground();
+        	initWorldElements();
+        	initPlayer();
+        	initActionInputs();
+
+        	// loop the creation of walls
+		    game.time.events.loop(wallCreationInterval, createWalls);
+        }
+
+        var initBackground = function () {
+        	game.add.sprite(0, 0, 'bk');
+        }
+
+        var initWorldElements = function () {
+        	platformsGroup = game.add.group();
+        	platformsGroup.enableBody = true;
+
+        	// walls will inherits properties of platforms
+        	wallsGroup = game.add.group();
+        	platformsGroup.add(wallsGroup);
+
+	        // create the ground	
+    		var ground = platformsGroup.create(0, game.world.height - 192, 'plateform');
+    		//  original size: 400x32
+    		ground.scale.setTo(2, 6);
+    		//  This stops it from falling away when you jump on it
+    		ground.body.immovable = true;
+
+    		// create the ceiling
+    		var ceiling = platformsGroup.create(0, 0, 'plateform');
+    		ceiling.scale.setTo(2, 6);
+        }
+
+        var initPlayer = function () {
+    		player = game.add.sprite(200, 300, 'dude');
+
+    		game.physics.arcade.enable(player);
+		    player.body.bounce.y = 0.2;
+		    player.body.gravity.y = 300;
+		    player.body.collideWorldBounds = true;
+
+		    player.animations.add('run', [5, 6, 7, 8], 10, true);
+        }
+
+        var initActionInputs = function () {
+		    buttons_fire = game.add.sprite(100, 450, 'button_fire');
+		    buttons_water = game.add.sprite(300, 450, 'button_water');
+		    buttons_plant = game.add.sprite(500, 450, 'button_plant');
+		    
+		    buttons_fire.inputEnabled = true;
+			buttons_fire.events.onInputDown.add(equipHoodHandler, this);
+
+		    buttons_water.inputEnabled = true;
+			buttons_water.events.onInputDown.add(equipHoodHandler, this);
+
+		    buttons_plant.inputEnabled = true; 
+			buttons_plant.events.onInputDown.add(equipHoodHandler, this);
+        }
     	
-    	play.prototype = {
-    		preload: function () {
-	        	// load images
-	        	game.load.image('bk', 'img/sky.png');
-	        	game.load.image('plateform', 'img/platform.png');
-	        	game.load.spritesheet('dude', 'img/dude.png', 32, 48);
-	        	game.load.image('wall-plant', 'img/wall.png');
-	        	game.load.image('wall-fire', 'img/wall_fire.png');
-	        	game.load.image('wall-water', 'img/wall_water.png');
-	        	game.load.image('button_water', 'img/button_water.png');
-	        	game.load.image('button_fire', 'img/button_fire.png');
-	        	game.load.image('button_plant', 'img/button_plant.png');
-	        },
 
-	       	create: function () {
-	        	// enable Arcade  Physics system
-	        	game.physics.startSystem(Phaser.Physics.ARCADE);
+        /*
+         * UPDATE
+         *	
+         */
 
-	        	// add bk
-	        	game.add.sprite(0, 0, 'bk');
-
-	        	// create ground group
-	        	platforms = game.add.group();
-	        	walls = game.add.group();
-	        	platforms.add(walls);
-
-	        	//  We will enable physics for any object that is created in this group
-	    		platforms.enableBody = true;
-
-	    		// Here we create the ground.
-	    		var ground = platforms.create(0, game.world.height - 192, 'plateform');
-
-	    		//  Scale it to fit the width of the game (the original sprite is 400x32 in size)
-	    		ground.scale.setTo(2, 6);
-
-	    		//  This stops it from falling away when you jump on it
-	    		ground.body.immovable = true;
-
-	    		// ceiling
-	    		var ceiling = platforms.create(0, 0, 'plateform');
-	    		ceiling.scale.setTo(2, 6);
-	    		ceiling.body.immovable = true;
-
-	    		// dude
-	    		player = game.add.sprite(200, 300, 'dude');
-
-	    		//  We need to enable physics on the player
-	    		game.physics.arcade.enable(player);
-
-	    		//  Player physics properties. Give the little guy a slight bounce.
-			    player.body.bounce.y = 0.2;
-			    player.body.gravity.y = 300;
-			    player.body.collideWorldBounds = true;
-
-			    //  Our two animations, walking left and right.
-			    player.animations.add('run', [5, 6, 7, 8], 10, true);
-
-			    cursors = game.input.keyboard.createCursorKeys();
-
-			    game.time.events.loop(wallInterval, addWalls);
-
-			    var buttons = {};
-			    buttons.fire = game.add.sprite(100, 450, 'button_fire');
-			    buttons.water = game.add.sprite(300, 450, 'button_water');
-			    buttons.plant = game.add.sprite(500, 450, 'button_plant');
-			    
-			    buttons.fire.inputEnabled = true;
-			    buttons.water.inputEnabled = true;
-			    buttons.plant.inputEnabled = true; 
-
-				//callback function for click events
-				buttons.fire.events.onInputDown.add(escape, this);
-				buttons.water.events.onInputDown.add(escape, this);
-				buttons.plant.events.onInputDown.add(escape, this);
-        	},
-
-        	 
-        	update: function () {
-	        	
-	    		game.physics.arcade.collide(player, platforms);
-	    		//  Collide the player with the platforms
-	    		game.physics.arcade.collide(player, walls, onCollision);
-
-			    if (cursors.left.isDown)
-			    {
-			    	toggleHood('plant');
-			    	console.log('press key plant');
-			    }
-			    else if (cursors.right.isDown)
-			    {
-			    	toggleHood('fire');
-			    	console.log('press key fire');
-			    }
-			    else if (cursors.up.isDown)
-			    {
-			    	toggleHood('water');
-			    	console.log('press key water');
-			    }
-			    else
-			    {
-			        //  Always running
-			        player.animations.loop = true;
-
-			        // add animation
-			        player.animations.play('run');
-			    }
-        	}
+	    var update = function () {
+    		game.physics.arcade.collide(player, platformsGroup);
+    		// callback for collision with walls
+    		game.physics.arcade.collide(player, wallsGroup, onCollisionHandler);
+		    
+	        //  Always running
+	        player.animations.loop = true;
+	        player.animations.play('run');
     	}
 
-    	function escape (el) {
-        	if (el.key === 'button_fire') {
-        		toggleHood('plant');
-        	}
-        	else if (el.key === 'button_water') {
-        		toggleHood('fire');
-        	}
-        	else if (el.key === 'button_plant') {
-        		toggleHood('water');
-        	}
+
+    	/*
+    	 * Handlers
+    	 */
+
+    	var equipHoodHandler = function (event) {
+    		// extract element 'fire' from eg. 'button_fire'
+    		var elementClicked = event.key.replace(/button_/i, '');
+    		updatePlayerSkills(oppositeElements[elementClicked].strongAgainst);
         }
 
 
-    	function toggleHood(element) {
-    		escapeElements.fire = false;
-    		escapeElements.water = false;
-    		escapeElements.plant = false;
+    	var updatePlayerSkills = function (elementStrongAgainst) {
+    		player.resistance = elementStrongAgainst;
 
-			escapeElements[element] = true;
-    		console.log('escape ' + element + ' is active');
+			console.log('Player has resistance against: ' + player.resistance);
     	}
 
-    	function onCollision () {
+    	var onCollisionHandler = function () {
+    		// the player died
     		player.destroy();
+
+    		// restart game
     		game.state.start("Play");
     	}
 
-        Wall = function(x, y, speed, element) {
-        	var el = elements[game.rnd.integerInRange(0,2)];
-			Phaser.Sprite.call(this, game, x, y, 'wall-' + el);
+
+    	/*
+    	 * WALL Object
+		 */
+
+        Wall = function (x, y, speed) {
+        	// get random element
+        	var wallElement = elements[game.rnd.integerInRange(0,2)];
+        	this.element = wallElement;
+
+			Phaser.Sprite.call(this, game, x, y, 'wall-' + wallElement);
 			game.physics.enable(this, Phaser.Physics.ARCADE);
-			this.body.gravity.x = -300;
-            this.element = el;
-            console.log('wall of element: ' + this.element);
+			this.body.gravity.x = speed;
+            
+            console.log('creation of a wall of element: ' + this.element);
         };
         
         Wall.prototype = Object.create(Phaser.Sprite.prototype);
-
-
         
         Wall.prototype.constructor = Wall;
         
         Wall.prototype.update = function () {
-        	if (escapeElements[this.element]) {
+        	if (player.resistance === this.element) {
+        		// disable collision
         		this.body.checkCollision.left = false;
         	}
-		};  
+		} 
 
-        function addWalls () {
-        	var wall = new Wall(800, 100, element);
+        var createWalls = function () {
+        	var wall = new Wall(800, 100, gameSpeed);
 			game.add.existing(wall);
-			walls.add(wall);
-        }      
+			wallsGroup.add(wall);
+        }
 
-        game.state.add("Play",play);
-     	game.state.start("Play");
+
+        /*
+       	 * GAME
+       	 */
+
+       	var play = function (game) {};
+
+		play.prototype = {
+    		preload: preload,
+	       	create: init,
+        	update: update
+    	}
+
+        game.state.add('Play', play);
+     	game.state.start('Play');
     };
 
     </script>
