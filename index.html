@@ -31,7 +31,9 @@
 	        	game.load.image('bk', 'img/sky.png');
 	        	game.load.image('plateform', 'img/platform.png');
 	        	game.load.spritesheet('dude', 'img/dude.png', 32, 48);
-	        	game.load.image('wall', 'img/wall.png');
+	        	game.load.image('wall-plant', 'img/wall.png');
+	        	game.load.image('wall-fire', 'img/wall_fire.png');
+	        	game.load.image('wall-water', 'img/wall_water.png');
 	        },
 
 	       	create: function () {
@@ -129,10 +131,11 @@
     	}
 
         Wall = function(x, y, speed, element) {
-			Phaser.Sprite.call(this, game, x, y, 'wall');
+        	var el = elements[game.rnd.integerInRange(0,2)];
+			Phaser.Sprite.call(this, game, x, y, 'wall-' + el);
 			game.physics.enable(this, Phaser.Physics.ARCADE);
 			this.body.gravity.x = -300;
-            this.element = elements[game.rnd.integerInRange(0,2)];
+            this.element = el;
             console.log('wall of element: ' + this.element);
         };
         
