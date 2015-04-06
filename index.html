@@ -14,14 +14,32 @@
         var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
         var platforms,
         	player,
-        	cursor;
+        	cursor,
+        	Wall,
+        	wallInterval = 2000;
 
         function preload () {
         	// load images
         	game.load.image('bk', 'img/sky.png');
         	game.load.image('plateform', 'img/platform.png');
         	game.load.spritesheet('dude', 'img/dude.png', 32, 48);
+        	game.load.image('wall', 'img/wall.png');
         }
+
+        Wall = function(x, y, speed) {
+			Phaser.Sprite.call(this, game, x, y, 'wall');
+			game.physics.enable(this, Phaser.Physics.ARCADE);
+			// this.body.immovable = true;
+			this.body.gravity.x = -150;
+        };
+        Wall.prototype = Object.create(Phaser.Sprite.prototype);
+        Wall.prototype.constructor = Wall;
+        Wall.prototype.update = function () {
+	        if (this.x < -this.width) {
+				this.destroy();
+				console.log('wall destroyed');
+			}
+		};
 
         function create () {
         	// enable Arcade  Physics system
@@ -66,6 +84,13 @@
 
 		    cursors = game.input.keyboard.createCursorKeys();
 
+		    game.time.events.loop(wallInterval, addWalls);
+        }
+
+        function addWalls () {
+        	var wall = new Wall(700, 100);
+			game.add.existing(wall);
+			platforms.add(wall);
         }
 
         function update () {
