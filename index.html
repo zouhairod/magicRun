@@ -10,112 +10,131 @@
     <script type="text/javascript">
 
     window.onload = function() {
-
-        var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+    	var game = new Phaser.Game(800, 600, Phaser.AUTO, '');
         var platforms,
         	player,
         	cursor,
         	Wall,
-        	wallInterval = 2000;
+        	walls,
+        	wallInterval = 2000,
+        	canEscapeFire = false;
+    	
+    	var play = function(game) {};
+    	
+    	play.prototype = {
+    		preload: function () {
+	        	// load images
+	        	game.load.image('bk', 'img/sky.png');
+	        	game.load.image('plateform', 'img/platform.png');
+	        	game.load.spritesheet('dude', 'img/dude.png', 32, 48);
+	        	game.load.image('wall', 'img/wall.png');
+	        },
 
-        function preload () {
-        	// load images
-        	game.load.image('bk', 'img/sky.png');
-        	game.load.image('plateform', 'img/platform.png');
-        	game.load.spritesheet('dude', 'img/dude.png', 32, 48);
-        	game.load.image('wall', 'img/wall.png');
-        }
+	       	create: function () {
+	        	// enable Arcade  Physics system
+	        	game.physics.startSystem(Phaser.Physics.ARCADE);
+
+	        	// add bk
+	        	game.add.sprite(0, 0, 'bk');
+
+	        	// create ground group
+	        	platforms = game.add.group();
+	        	walls = game.add.group();
+	        	platforms.add(walls);
+
+	        	//  We will enable physics for any object that is created in this group
+	    		platforms.enableBody = true;
+
+	    		// Here we create the ground.
+	    		var ground = platforms.create(0, game.world.height - 192, 'plateform');
+
+	    		//  Scale it to fit the width of the game (the original sprite is 400x32 in size)
+	    		ground.scale.setTo(2, 6);
+
+	    		//  This stops it from falling away when you jump on it
+	    		ground.body.immovable = true;
+
+	    		// ceiling
+	    		var ceiling = platforms.create(0, 0, 'plateform');
+	    		ceiling.scale.setTo(2, 6);
+	    		ceiling.body.immovable = true;
+
+	    		// dude
+	    		player = game.add.sprite(200, 300, 'dude');
+
+	    		//  We need to enable physics on the player
+	    		game.physics.arcade.enable(player);
+
+	    		//  Player physics properties. Give the little guy a slight bounce.
+			    player.body.bounce.y = 0.2;
+			    player.body.gravity.y = 300;
+			    player.body.collideWorldBounds = true;
+
+			    //  Our two animations, walking left and right.
+			    player.animations.add('run', [5, 6, 7, 8], 10, true);
+
+			    cursors = game.input.keyboard.createCursorKeys();
+
+			    game.time.events.loop(wallInterval, addWalls);
+        	},
+
+        	update: function () {
+	        	
+	    		game.physics.arcade.collide(player, platforms);
+	    		//  Collide the player with the platforms
+	    		game.physics.arcade.collide(player, walls, onCollision);
+
+			    if (cursors.left.isDown)
+			    {}
+			    else if (cursors.right.isDown)
+			    {
+			    	canEscapeFire = true;
+			    }
+			    else if (cursors.up.isDown)
+			    {
+			    	
+			    }
+			    else
+			    {
+			        //  Always running
+			        player.animations.loop = true;
+
+			        // add animation
+			        player.animations.play('run');
+			    }
+        	}
+    	}
+
+    	function onCollision () {
+    		console.log('collision detected');
+    		player.destroy();
+    		game.state.start("Play");
+    	}
 
         Wall = function(x, y, speed) {
 			Phaser.Sprite.call(this, game, x, y, 'wall');
 			game.physics.enable(this, Phaser.Physics.ARCADE);
-			// this.body.immovable = true;
-			this.body.gravity.x = -150;
+			this.body.gravity.x = -300;
         };
+        
         Wall.prototype = Object.create(Phaser.Sprite.prototype);
+        
         Wall.prototype.constructor = Wall;
+        
         Wall.prototype.update = function () {
-	        if (this.x < -this.width) {
-				this.destroy();
-				console.log('wall destroyed');
-			}
-		};
-
-        function create () {
-        	// enable Arcade  Physics system
-        	game.physics.startSystem(Phaser.Physics.ARCADE);
-
-        	// add bk
-        	game.add.sprite(0, 0, 'bk');
-
-        	// create ground group
-        	platforms = game.add.group();
-
-        	//  We will enable physics for any object that is created in this group
-    		platforms.enableBody = true;
-
-    		// Here we create the ground.
-    		var ground = platforms.create(0, game.world.height - 192, 'plateform');
-
-    		//  Scale it to fit the width of the game (the original sprite is 400x32 in size)
-    		ground.scale.setTo(2, 6);
-
-    		//  This stops it from falling away when you jump on it
-    		ground.body.immovable = true;
-
-    		// ceiling
-    		var ceiling = platforms.create(0, 0, 'plateform');
-    		ceiling.scale.setTo(2, 6);
-    		ceiling.body.immovable = true;
-
-    		// dude
-    		player = game.add.sprite(200, 300, 'dude');
-
-    		//  We need to enable physics on the player
-    		game.physics.arcade.enable(player);
-
-    		//  Player physics properties. Give the little guy a slight bounce.
-		    player.body.bounce.y = 0.2;
-		    player.body.gravity.y = 300;
-		    player.body.collideWorldBounds = true;
-
-		    //  Our two animations, walking left and right.
-		    player.animations.add('run', [5, 6, 7, 8], 10, true);
-
-		    cursors = game.input.keyboard.createCursorKeys();
-
-		    game.time.events.loop(wallInterval, addWalls);
-        }
+        	if (canEscapeFire) {
+        		this.body.checkCollision.left = false;
+        	}
+		};  
 
         function addWalls () {
-        	var wall = new Wall(700, 100);
+        	var wall = new Wall(800, 100);
 			game.add.existing(wall);
-			platforms.add(wall);
-        }
+			walls.add(wall);
+        }      
 
-        function update () {
-        	//  Collide the player with the platforms
-    		game.physics.arcade.collide(player, platforms);
-
-    		//  Reset the players velocity (movement)
-		    // player.body.velocity.x = 0;
-
-		    if (cursors.left.isDown)
-		    {}
-		    else if (cursors.right.isDown)
-		    {}
-		    else if (cursors.up.isDown)
-		    {}
-		    else
-		    {
-		        //  Always running
-		        player.animations.loop = true;
-
-		        // add animation
-		        player.animations.play('run');
-		    }
-        }
-
+        game.state.add("Play",play);
+     	game.state.start("Play");
     };
 
     </script>
