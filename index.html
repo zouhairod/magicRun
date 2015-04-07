@@ -2,7 +2,11 @@
 <html>
     <head>
         <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
         <title>hello phaser!</title>
+
+        <!-- scripts -->
         <script src="js/phaser.min.js"></script>
     </head>
     <body>
@@ -10,7 +14,7 @@
     <script type="text/javascript">
 
     window.onload = function() {
-    	var game = new Phaser.Game(800, 600, Phaser.AUTO, '');
+    	var game = new Phaser.Game(800, 600, Phaser.CANVAS, 'container');
         
         var platformsGroup,
         	wallsGroup,
@@ -33,6 +37,7 @@
 
     	var preload = function () {
 	    	game.load.image('bk', 'img/sky.png');
+	    	game.load.image('tower', 'img/tower.png');
 	    	game.load.image('plateform', 'img/platform.png');
 	    	game.load.image('wall-plant', 'img/wall.png');
 	    	game.load.image('wall-fire', 'img/wall_fire.png');
@@ -63,6 +68,13 @@
 
         var initBackground = function () {
         	game.add.sprite(0, 0, 'bk');
+
+        	var backgroundGroup = game.add.group();
+        	backgroundGroup.enableBody = true;
+
+			var tower = backgroundGroup.create(800, 125, 'tower');
+        	tower.scale.setTo(0.5, 0.5);
+        	tower.body.gravity.x = -20;
         }
 
         var initWorldElements = function () {
@@ -82,7 +94,7 @@
 
     		// create the ceiling
     		var ceiling = platformsGroup.create(0, 0, 'plateform');
-    		ceiling.scale.setTo(2, 6);
+    		ceiling.scale.setTo(2, 2);
         }
 
         var initPlayer = function () {
@@ -148,9 +160,7 @@
     	var onCollisionHandler = function () {
     		// the player died
     		player.destroy();
-
-    		// restart game
-    		game.state.start("Play");
+    		startGame();
     	}
 
 
@@ -182,7 +192,7 @@
 		} 
 
         var createWalls = function () {
-        	var wall = new Wall(800, 100, gameSpeed);
+        	var wall = new Wall(800, 50, gameSpeed);
 			game.add.existing(wall);
 			wallsGroup.add(wall);
         }
@@ -194,17 +204,36 @@
 
        	var play = function (game) {};
 
-		play.prototype = {
+       	play.prototype = {
     		preload: preload,
 	       	create: init,
         	update: update
     	}
 
+       	game.state.add('Play', play);
+
+       	var startGame = function () {
+       		game.state.start('Play');
+       	}
+		
         game.state.add('Play', play);
-     	game.state.start('Play');
+        startGame();
+
+        /*
+         * Home Menu
+         */
+
+        // window.start = function() {
+        //  	startGame();
+        //  	$('#menu').style.display = 'none';
+        // }
     };
 
     </script>
+
+    <div style="height:600px;width:800px;"
+    		id="container">
+    </div>
 
     </body>
 </html>
